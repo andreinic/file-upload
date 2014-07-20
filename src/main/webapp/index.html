@@ -1,0 +1,115 @@
+<html>
+<!--script src="http://code.jquery.com/jquery-1.9.1.js"></script-->
+<body>
+<div>
+    <fieldset>
+        <div>
+            <label for="fileInput">Image File</label>
+            <input id="fileInput" type="file" name="fileupload" multiple="false" accept="image/*"/>
+        </div>
+        <div>
+            <label for="captionInput">Caption</label>
+            <input id="captionInput" type="text" name="captionInput"/>
+        </div>
+        <div>
+            <label for="altTagInput">Alt tag</label>
+            <input id="altTagInput" type="text" name="altTagInput"/>
+        </div>
+        <div>
+            <label for="defaultInput">Default filename as alt_tag/caption</label>
+            <input id="defaultInput" type="checkbox" name="defaultInput" onclick="checkboxChanged()"/>
+        </div>
+    </fieldset>
+    <div>
+        <input type="button" id="btnAdd" value="Add another image" onclick="addAnother()"/>
+        <input type="button" id="btnUpload" value="Upload" onclick="upload()"/>
+    </div>
+
+    <script>
+        var fileName;
+        var file;
+
+        function checkboxChanged(){
+
+            var checked = document.getElementById("defaultInput").checked;
+            document.getElementById("captionInput").disabled = checked;
+            document.getElementById("altTagInput").disabled = checked;
+
+        }
+
+        function addAnother(){
+            document.getElementById("fileInput").value = "";
+            document.getElementById("captionInput").value = "";
+            document.getElementById("altTagInput").value = "";
+            document.getElementById("defaultInput").value = "";
+        }
+
+        function upload(){
+            var fileInput = document.getElementById("fileInput");
+            if (!fileInput.value) {
+                alert("Select a file to upload first");
+                return;
+            }
+
+            file = fileInput.files[0];
+
+            if(!(file.type.substr(0, 6) === "image/")){
+                alert("This is not an image file");
+                return;
+            }
+            fileName = file.name;
+            var reader = new FileReader();
+            reader.onload = function(f){
+                sendForm()
+            };
+
+            reader.readAsBinaryString(file);
+		}
+
+        function sendForm(){
+            var captionText;
+            var altTagText;
+
+            var defaultInput = document.getElementById("defaultInput");
+            var defaultInputBool = defaultInput.checked;
+
+            var name = fileName;
+            if(defaultInputBool && (defaultInputBool === true)){
+                captionText = name;
+                altTagText = name;
+            }
+            else{
+                var captionInput = document.getElementById("captionInput");
+                captionText = captionInput.value;
+
+                var altTagInput = document.getElementById("altTagInput");
+                altTagText = altTagInput.value;
+            }
+
+            var formData = new FormData();
+            formData.append("file", file);
+            formData.append("caption", captionText);
+            formData.append("altTag", altTagText);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/file-upload/rest/files/" + name + "/", true);
+            xhr.onload = function(e){
+                if(this.status === 200){
+                    alert("Upload completed.");
+                    return;
+                }
+
+                alert("Upload failed");
+                var errWindow = window.open();
+                errWindow.document.write(this.responseText);
+            };
+            xhr.onerror = function(e){
+                alert("Upload failed.");
+            };
+            xhr.send(formData);
+        }
+
+    </script>
+</div>
+</body>
+</html>
